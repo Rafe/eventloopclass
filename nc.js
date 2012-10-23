@@ -11,11 +11,11 @@ dns.lookup(host, function(err, address, family) {
 
 function connect(address) {
   var fd = syscalls.socket(syscalls.AF_INET, syscalls.SOCK_STREAM, 0);
-  syscalls.fcntl(fd, syscalls.F_SETFL, syscalls.O_NONBLOCK);
+  // syscalls.fcntl(fd, syscalls.F_SETFL, syscalls.O_NONBLOCK);
   
   syscalls.connect(fd, port, address);
   
-  syscalls.select([], [fd], []);
+  // syscalls.select([], [fd], []);
   
   while (true) {
     var fds = syscalls.select([0, fd], [], []);
