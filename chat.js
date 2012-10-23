@@ -32,20 +32,28 @@ function disconnect(fd) {
   console.log("User disconnected on FD: " + fd);
   syscalls.close(fd);
   users.splice(users.indexOf(fd), 1);
+  delete callbacks[fd];
+}
+
+var callbacks = {}; // {fd: function() {...}}
+
+callbacks[acceptFd] = function() {
+  var userFd = accept();
+  
+  callbacks[userFd] = function() {
+    // user sent a message
+    readAndBroadcastMessage(userFd);
+  }
 }
 
 while (true) {
-  var fds = syscalls.select(users.concat(acceptFd), [], []);
+  var fds = syscalls.select(Object.keys(callbacks), [], []);
   
   var readableFds = fds[0];
   
   readableFds.forEach(function(fd) {
-    if (fd == acceptFd) {
-      accept();
-    } else {
-      // user sent a message
-      readAndBroadcastMessage(fd);
-    }
+    var callback = callbacks[fd];
+    callback();
   });
 }
 
