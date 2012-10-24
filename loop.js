@@ -62,5 +62,7 @@ exports.run = function() {
         timers.splice(timers.indexOf(timer), 1);
       }
     });
+    
+    // execute nextTick callbacks here
   }  
 }
