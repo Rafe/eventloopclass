@@ -9,27 +9,31 @@ syscalls.listen(fd, 100);
 loop.on(fd, 'read', function() {
   var connFd = syscalls.accept(fd);
   
-  loop.once(connFd, 'read', function() {
-    var code = syscalls.read(connFd, 10240);
-    
-    if (code.length == 0) {
+  var code = "";
+  loop.on(connFd, 'read', function() {
+    var chunk = syscalls.read(connFd, 10240);
+    if (chunk.length == 0) {
       syscalls.close(connFd);
       return;
     }
+    if (chunk == "\n") evalCode(code);
+    code += chunk;
+  }
+})
+
+function evalCode(code) {  
+  if (syscalls.fork() == 0) {
+    // In child
+    console.log("Running in PID: " + syscalls.getpid());
+    var result = eval(code);
+    syscalls.write(connFd, JSON.stringify(result) + '\n');
+    console.log("Done PID: " + syscalls.getpid());
+    process.exit();
     
-    if (syscalls.fork() == 0) {
-      // In child
-      console.log("Running in PID: " + syscalls.getpid());
-      var result = eval(code);
-      syscalls.write(connFd, JSON.stringify(result) + '\n');
-      console.log("Done PID: " + syscalls.getpid());
-      process.exit();
-      
-    } else {
-      // In master
-      syscalls.close(connFd);
-    }
-  });
+  } else {
+    // In master
+    syscalls.close(connFd);
+  }
 })
 
 loop.run();
